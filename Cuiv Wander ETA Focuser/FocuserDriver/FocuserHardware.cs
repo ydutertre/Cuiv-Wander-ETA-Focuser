@@ -330,7 +330,6 @@ namespace ASCOM.CuivWandererETA.Focuser
                         catch (Exception)
                         {
                             throw new ASCOM.NotConnectedException("Failed to open the serial port. Please check the COM port settings and ensure the device is connected.");
-                            return; // Exit if the serial port cannot be opened
                         }
                         LogMessage("SetConnected", $"Connecting to hardware.");
                     }
@@ -568,7 +567,7 @@ namespace ASCOM.CuivWandererETA.Focuser
             }
             isMoving = false; // Set the moving flag to false after the move is complete
             lastMoveTime = DateTime.Now; // Update the last move time to the current time
-            ETApositions = new int[] { newPositions[0], newPositions[1], newPositions[2], Position }; // We have completed the move
+            ETApositions = new int[] { newPositions[0], newPositions[1], newPositions[2], Position }; // We have completed the move, now we need to deceive the listening application
             return;
         }
 
@@ -716,7 +715,7 @@ namespace ASCOM.CuivWandererETA.Focuser
         {
             if ((DateTime.Now - lastMoveTime).TotalSeconds < 600 && hasMoved)
             {
-                return ETApositions; //We need to lie to NINA because the ETA is not quite precise enough to achieve exactly the requested position
+                return ETApositions; //We need to lie to NINA because the ETA is not quite precise enough to achieve exactly the requested position (off by one or two microns), causing NINA to think the focus move failed
             }
             string currentStatus = string.Empty; // Variable to hold the current status from the hardware
             try
@@ -725,7 +724,7 @@ namespace ASCOM.CuivWandererETA.Focuser
                 utilities.WaitForMilliseconds(200);
                 currentStatus = serialPort.ReadLine();
             }
-            catch (Exception ex)
+            catch
             {
                 return ETApositions; // If there is an error, return the last known positions
             }
@@ -743,13 +742,13 @@ namespace ASCOM.CuivWandererETA.Focuser
                 if (decimal.TryParse(positionValues[i], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out decimal parsedDecimal))
                 {
                     int positionValue = (int)(parsedDecimal * 1000); // Convert to integer by multiplying by 1000
-                    if (positionValue > 0)
+                    if (positionValue >= 0)
                     {
                         positions[i - 2] = (int)(parsedDecimal * 1000);
                     }
                     else
                     {
-                       return ETApositions; // If any position is zero or negative, return the last known positions
+                       return ETApositions; // If any position is negative, return the last known positions
                     }
                 }
             }
