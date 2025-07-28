@@ -714,7 +714,7 @@ namespace ASCOM.CuivWandererETA.Focuser
 
         internal static int[] GetPositions()
         {
-            if ((DateTime.Now - lastMoveTime).TotalSeconds < 60 && hasMoved)
+            if ((DateTime.Now - lastMoveTime).TotalSeconds < 600 && hasMoved)
             {
                 return ETApositions; //We need to lie to NINA because the ETA is not quite precise enough to achieve exactly the requested position
             }
