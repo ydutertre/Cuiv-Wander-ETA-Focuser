@@ -122,6 +122,7 @@ namespace ASCOM.CuivWandererETA.Focuser
                 // If you are using a serial COM port you will find the COM port name selected by the user through the setup dialogue in the comPort variable.
 
                 hasMoved = false;
+                //TODO: check that the hardware we connected to is indeed a Wanderer ETA
                 ETApositions = GetPositions(); // Get the initial positions from the hardware
                 LogMessage("Start values", string.Join(", ", ETApositions));
 
@@ -563,6 +564,7 @@ namespace ASCOM.CuivWandererETA.Focuser
                     break; // Exit the loop if write is successful
                 }
                 isMoving = true; // Set the moving flag to true while the focuser is moving
+                //TODO: if we can have a thread that continuously reads the serial port output, we can use that as a timeout, and proceed when the "Position reached" message is obtained
                 utilities.WaitForMilliseconds(Math.Abs(relativeMove) * 50 + 2000); // Wait for the motor to move the focuser, roughly 50ms per step, plus 2 seconds buffer
             }
             isMoving = false; // Set the moving flag to false after the move is complete
@@ -711,6 +713,8 @@ namespace ASCOM.CuivWandererETA.Focuser
             LogMessage(identifier, msg);
         }
 
+        //TODO: This whole function should be its own thread, running continuously to update the positions
+        //There is also an undocumented "Position reached" message that can be sent to know when a pivot movement is over that I could get to do the next pivot
         internal static int[] GetPositions()
         {
             if ((DateTime.Now - lastMoveTime).TotalSeconds < 600 && hasMoved)
